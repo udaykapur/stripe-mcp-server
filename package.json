@@ -1,0 +1,35 @@
+{
+  "name": "stripe-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Stripe payment operations",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "stripe-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "watch": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "mcp",
+    "stripe",
+    "payments"
+  ],
+  "author": "Uday Kapur",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "stripe": "^17.7.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.6"
+  }
+}
