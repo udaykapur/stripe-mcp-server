@@ -103,6 +103,46 @@ describe("schema hardening", () => {
   });
 });
 
+describe("key prefix validation", () => {
+  it("rejects publishable keys at startup", () => {
+    resetStripeClientForTests();
+    expect(() => getStripeClient({ STRIPE_SECRET_KEY: "pk_test_abc123" })).toThrow(
+      /Publishable keys/,
+    );
+  });
+
+  it("accepts secret keys", () => {
+    resetStripeClientForTests();
+    expect(() => getStripeClient({ STRIPE_SECRET_KEY: "sk_test_abc123" })).not.toThrow(
+      StripeConfigError,
+    );
+    resetStripeClientForTests();
+  });
+
+  it("accepts restricted keys", () => {
+    resetStripeClientForTests();
+    expect(() => getStripeClient({ STRIPE_SECRET_KEY: "rk_test_abc123" })).not.toThrow(
+      StripeConfigError,
+    );
+    resetStripeClientForTests();
+  });
+});
+
+describe("checkout line_items cap", () => {
+  it("rejects more than 20 line items", () => {
+    const items = Array.from({ length: 21 }, (_, i) => ({
+      price: `price_${i}`,
+      quantity: 1,
+    }));
+    const result = createCheckoutSessionSchema.safeParse({
+      mode: "payment",
+      success_url: "https://example.com/success",
+      line_items: items,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("tool discovery (MCP listTools)", () => {
   it("serialises every tool input schema and exposes the key tools", async () => {
     process.env.STRIPE_SECRET_KEY ??= "sk_test_123";

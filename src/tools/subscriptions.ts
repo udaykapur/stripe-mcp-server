@@ -52,6 +52,7 @@ export function registerSubscriptionTools(server: McpServer): void {
       title: "Create Subscription",
       description:
         "Create a new subscription for a customer. Requires at least one price item.",
+      annotations: { destructiveHint: true },
       inputSchema: createSubscriptionSchema,
     },
     async (params) => {

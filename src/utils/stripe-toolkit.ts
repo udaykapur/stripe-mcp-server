@@ -281,7 +281,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         payment_method: sanitizeValue(record.payment_method),
         latest_charge: sanitizeValue(record.latest_charge),
         receipt_email: maskEmail(record.receipt_email),
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
         metadata: sanitizeMetadata(record.metadata),
       });
     case "payment_method":
@@ -316,7 +316,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         payment_intent: sanitizeValue(record.payment_intent),
         payment_method: sanitizeValue(record.payment_method),
         receipt_email: maskEmail(record.receipt_email),
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
       });
     case "subscription":
       return pickDefined({
@@ -345,8 +345,8 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         updated: record.updated,
         livemode: record.livemode,
         active: record.active,
-        name: sanitizeScalarValue(record.name),
-        description: sanitizeScalarValue(record.description),
+        name: maskFreeText(record.name),
+        description: maskFreeText(record.description),
         default_price: sanitizeValue(record.default_price),
         metadata: sanitizeMetadata(record.metadata),
       });
@@ -362,7 +362,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         billing_scheme: record.billing_scheme,
         product: sanitizeValue(record.product),
         recurring: sanitizeValue(record.recurring),
-        nickname: sanitizeScalarValue(record.nickname),
+        nickname: maskFreeText(record.nickname),
         metadata: sanitizeMetadata(record.metadata),
       });
     case "invoice":
@@ -384,7 +384,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         hosted_invoice_url: record.hosted_invoice_url ? { redacted: true } : undefined,
         invoice_pdf: record.invoice_pdf ? { redacted: true } : undefined,
         payment_intent: sanitizeValue(record.payment_intent),
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
         metadata: sanitizeMetadata(record.metadata),
       });
     case "invoiceitem":
@@ -397,7 +397,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         invoice: sanitizeValue(record.invoice),
         amount: record.amount,
         currency: record.currency,
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
         price: sanitizeValue(record.price),
         quantity: record.quantity,
         metadata: sanitizeMetadata(record.metadata),
@@ -438,7 +438,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         id: record.id,
         created: record.created,
         livemode: record.livemode,
-        name: sanitizeScalarValue(record.name),
+        name: maskFreeText(record.name),
         valid: record.valid,
         percent_off: record.percent_off,
         amount_off: record.amount_off,
@@ -471,7 +471,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         status: record.status,
         type: record.type,
         reporting_category: record.reporting_category,
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
       });
     case "payout":
       return pickDefined({
@@ -483,7 +483,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         currency: record.currency,
         method: record.method,
         status: record.status,
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
       });
     case "dispute":
       return pickDefined({
@@ -536,7 +536,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         status: record.status,
         api_version: record.api_version,
         application: record.application,
-        description: sanitizeScalarValue(record.description),
+        description: maskFreeText(record.description),
         enabled_events: sanitizeValue(record.enabled_events),
         metadata: sanitizeMetadata(record.metadata),
         secret_redacted: Object.prototype.hasOwnProperty.call(record, "secret")
@@ -633,7 +633,7 @@ function sanitizeBusinessProfile(value: unknown): unknown {
 
   const record = value as Record<string, unknown>;
   return pickDefined({
-    name: sanitizeScalarValue(record.name),
+    name: maskFreeText(record.name),
     support_email: maskEmail(record.support_email),
     support_phone: maskPhone(record.support_phone),
     url: record.url,
@@ -660,7 +660,7 @@ function sanitizeInvoiceSettings(value: unknown): unknown {
   const record = value as Record<string, unknown>;
   return pickDefined({
     default_payment_method: record.default_payment_method,
-    footer: sanitizeScalarValue(record.footer),
+    footer: maskFreeText(record.footer),
   });
 }
 

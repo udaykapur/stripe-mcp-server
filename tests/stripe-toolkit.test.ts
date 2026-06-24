@@ -166,6 +166,53 @@ describe("sanitizeStripeResponse", () => {
   });
 });
 
+describe("free-text sanitisation", () => {
+  it("truncates long customer names", () => {
+    const result = sanitizeStripeResponse({
+      object: "customer",
+      id: "cus_123",
+      name: "A".repeat(80),
+    }) as Record<string, unknown>;
+
+    expect(typeof result.name).toBe("string");
+    expect((result.name as string).length).toBeLessThan(80);
+    expect((result.name as string)).toContain("[truncated");
+  });
+
+  it("passes short customer names through", () => {
+    const result = sanitizeStripeResponse({
+      object: "customer",
+      id: "cus_123",
+      name: "Jane Smith",
+    }) as Record<string, unknown>;
+
+    expect(result.name).toBe("Jane Smith");
+  });
+
+  it("truncates long descriptions on payment intents", () => {
+    const result = sanitizeStripeResponse({
+      object: "payment_intent",
+      id: "pi_123",
+      amount: 1000,
+      currency: "usd",
+      status: "requires_payment_method",
+      description: "B".repeat(100),
+    }) as Record<string, unknown>;
+
+    expect((result.description as string)).toContain("[truncated");
+  });
+
+  it("truncates long product names", () => {
+    const result = sanitizeStripeResponse({
+      object: "product",
+      id: "prod_123",
+      name: "C".repeat(60),
+    }) as Record<string, unknown>;
+
+    expect((result.name as string)).toContain("[truncated");
+  });
+});
+
 describe("formatStripeError", () => {
   it("formats raw Stripe-like errors safely", () => {
     expect(

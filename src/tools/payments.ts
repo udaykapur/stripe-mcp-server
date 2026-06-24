@@ -47,6 +47,7 @@ export function registerPaymentTools(server: McpServer): void {
       title: "Create Payment Intent",
       description:
         "Create a Stripe PaymentIntent. Amount is in the smallest currency unit (e.g. cents for USD).",
+      annotations: { destructiveHint: true },
       inputSchema: createPaymentIntentSchema,
     },
     async (params) => {

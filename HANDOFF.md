@@ -11,7 +11,7 @@ Last updated: 2026-06-23
 - Strict input validation via Zod schemas derived from Stripe SDK type definitions
 - Idempotency key support on all mutating tools (except deletions)
 - Pinned Stripe API version: `2025-02-24.acacia`
-- Tests and build green: 19 tests passing, `npm run build` succeeds
+- Tests and build green: `npm run build` succeeds
 
 ## Key files
 

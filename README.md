@@ -81,7 +81,7 @@ Every Stripe API response is sanitised before reaching MCP output:
 - **URLs redacted**: hosted invoice URLs and invoice PDF links (bearer-style access tokens)
 - **Metadata redacted**: values stripped, keys preserved for operator context
 - **Unknown objects**: unrecognised Stripe object types reduced to a minimal envelope (`id`, `object`, `status`, `redacted: true`) instead of passed through raw
-- **Strict input validation**: Stripe IDs, currency codes, webhook event names, API versions, checkout payment method types, and balance transaction types all validated against known-safe patterns or Stripe SDK type unions
+- **Input validation**: Stripe IDs, currency codes, webhook event names, API versions, checkout payment method types, and balance transaction types validated against Zod schemas. Enum validators are derived from the installed Stripe SDK's type declarations at startup; if those files change shape in a future SDK version, validators degrade to allow-all with a stderr warning rather than crashing
 - **Idempotency**: all mutating tools accept optional `idempotency_key` (except deletions, which Stripe treats as inherently idempotent)
 - **Pinned API version**: `2025-02-24.acacia`, set in `src/stripe-client.ts`
 - **Bounded runtime**: network retries capped at 0-5, timeout capped at 1-120 seconds
@@ -90,7 +90,7 @@ Every Stripe API response is sanitised before reaching MCP output:
 
 ### Prerequisites
 
-- Node.js 18+ (20+ if running tests locally, due to Vite/Vitest dev dependencies)
+- Node.js 18+ for runtime. Node ^20.19.0 or >=22.12.0 for running tests (Vite/Vitest dev dependency requirement)
 - A Stripe account with API keys ([dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys))
 
 ### Install and build
@@ -114,6 +114,23 @@ cp .env.example .env
 | `STRIPE_SECRET_KEY`          | Yes      | -       | Secret key (`sk_test_…`, `sk_live_…`) or restricted key (`rk_test_…`, `rk_live_…`)         |
 | `STRIPE_MAX_NETWORK_RETRIES` | No       | `2`     | Max retries on transient failures (0-5)                                                    |
 | `STRIPE_TIMEOUT_MS`          | No       | `30000` | Request timeout in milliseconds (1000-120000)                                              |
+
+### Using restricted keys
+
+For tighter security, use [restricted keys](https://docs.stripe.com/keys#limit-access) (`rk_*`) instead of full secret keys. Minimum permissions per tool group:
+
+| Tool group    | Required permissions                                             |
+| ------------- | ---------------------------------------------------------------- |
+| Customers     | Customers: Read/Write                                            |
+| Payments      | PaymentIntents, PaymentMethods, Charges: Read/Write              |
+| Subscriptions | Subscriptions, Products, Prices: Read/Write                      |
+| Invoices      | Invoices: Read/Write                                             |
+| Checkout      | Checkout Sessions: Read/Write; Coupons: Read/Write               |
+| Refunds       | Refunds: Read/Write (also needs Charges or PaymentIntents: Read) |
+| Balance       | Balance: Read; Payouts: Read; Disputes: Read                     |
+| Webhooks      | Webhook Endpoints: Read/Write; Events: Read                      |
+
+Grant only the groups you need. Read-only tools (list/retrieve) need only Read permission on their resource.
 
 ### Wire into your MCP client
 
@@ -156,7 +173,7 @@ Any client that supports stdio transport can run this server. Point it at `dist/
 ## Verification
 
 ```bash
-npm test        # 19 tests (sanitisation, config validation, schema checks)
+npm test        # 20+ tests (sanitisation, config validation, schema checks)
 npm run build   # TypeScript compilation to dist/
 ```
 

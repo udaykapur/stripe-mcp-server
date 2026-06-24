@@ -40,6 +40,7 @@ export function registerWebhookTools(server: McpServer): void {
     {
       title: "Create Webhook Endpoint",
       description: "Register a new webhook endpoint with Stripe.",
+      annotations: { destructiveHint: true },
       inputSchema: createWebhookEndpointSchema,
     },
     async (params) => {
