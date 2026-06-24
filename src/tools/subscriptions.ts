@@ -31,8 +31,8 @@ export const createSubscriptionSchema = z
       .optional()
       .describe("How to collect payment"),
     days_until_due: z.number().int().positive().optional().describe("Days until invoice is due (for send_invoice)"),
-    coupon: z.string().optional().describe("Coupon ID to apply"),
-    promotion_code: z.string().optional().describe("Promotion code ID to apply"),
+    discount_coupon: z.string().optional().describe("Coupon ID to apply as discount"),
+    discount_promotion_code: z.string().optional().describe("Promotion code ID to apply as discount"),
     idempotency_key: idempotencyKeySchema.optional().describe("Optional idempotency key for safe retries"),
   })
   .superRefine((value, ctx) => {
@@ -67,8 +67,11 @@ export function registerSubscriptionTools(server: McpServer): void {
             metadata: params.metadata,
             collection_method: params.collection_method,
             days_until_due: params.days_until_due,
-            coupon: params.coupon,
-            promotion_code: params.promotion_code,
+            discounts: params.discount_coupon
+              ? [{ coupon: params.discount_coupon }]
+              : params.discount_promotion_code
+                ? [{ promotion_code: params.discount_promotion_code }]
+                : undefined,
           },
           buildStripeRequestOptions(params.idempotency_key),
         );
@@ -105,6 +108,7 @@ export function registerSubscriptionTools(server: McpServer): void {
       title: "Update Subscription",
       description:
         "Update a subscription. Can change items, payment method, trial, cancellation behavior, and metadata.",
+      annotations: { destructiveHint: true },
       inputSchema: {
         subscription_id: stripeIdSchema("sub_").describe("Subscription ID (sub_...)"),
         items: z
@@ -123,7 +127,7 @@ export function registerSubscriptionTools(server: McpServer): void {
         metadata: z.record(z.string(), z.string()).optional().describe("Metadata to update"),
         proration_behavior: z.enum(["create_prorations", "none", "always_invoice"]).optional().describe("How to handle prorations"),
         trial_end: z.union([z.number().int(), z.literal("now")]).optional().describe('Trial end timestamp or "now" to end immediately'),
-        coupon: z.string().optional().describe("Coupon ID to apply"),
+        discount_coupon: z.string().optional().describe("Coupon ID to apply as discount"),
         idempotency_key: idempotencyKeySchema.optional().describe("Optional idempotency key for safe retries"),
       },
     },
@@ -138,7 +142,7 @@ export function registerSubscriptionTools(server: McpServer): void {
             metadata: params.metadata,
             proration_behavior: params.proration_behavior,
             trial_end: params.trial_end,
-            coupon: params.coupon,
+            discounts: params.discount_coupon ? [{ coupon: params.discount_coupon }] : undefined,
           },
           buildStripeRequestOptions(idempotency_key),
         );

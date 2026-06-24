@@ -8,9 +8,9 @@ Last updated: 2026-06-23
 - 4 MCP resources (account, balance, webhook endpoints, product catalogue)
 - 4 MCP prompt templates (integration review, webhook setup, pricing design, payment troubleshooting)
 - All responses sanitised: PII masked, secrets redacted, unknown objects reduced to safe envelopes
-- Strict input validation via Zod schemas derived from Stripe SDK type definitions
+- Input validation via Zod schemas derived from Stripe SDK type declarations. Enum validators degrade to allow-all with a stderr warning if SDK type files change layout
 - Idempotency key support on all mutating tools (except deletions)
-- Pinned Stripe API version: `2025-02-24.acacia`
+- Pinned Stripe API version: `2026-05-27.dahlia`
 - Tests and build green: `npm run build` succeeds
 
 ## Key files

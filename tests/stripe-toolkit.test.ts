@@ -211,6 +211,34 @@ describe("free-text sanitisation", () => {
 
     expect((result.name as string)).toContain("[truncated");
   });
+
+  it("truncates long descriptions in generic objects (event diff path)", () => {
+    const result = sanitizeStripeResponse({
+      object: "event",
+      id: "evt_123",
+      type: "payment_intent.updated",
+      data: {
+        object: {
+          object: "payment_intent",
+          id: "pi_123",
+          amount: 1000,
+          currency: "usd",
+          status: "succeeded",
+          description: "D".repeat(80),
+        },
+        previous_attributes: {
+          description: "E".repeat(80),
+        },
+      },
+    }) as Record<string, unknown>;
+
+    const data = result.data as Record<string, unknown>;
+    const obj = data.object as Record<string, unknown>;
+    expect((obj.description as string)).toContain("[truncated");
+
+    const prev = data.previous_attributes as Record<string, unknown>;
+    expect((prev.description as string)).toContain("[truncated");
+  });
 });
 
 describe("formatStripeError", () => {

@@ -1,6 +1,6 @@
 # Stripe MCP Server
 
-A local [Model Context Protocol](https://modelcontextprotocol.io/) server for Stripe payment operations. 52 tools across 8 domains, with built-in PII redaction and strict input validation.
+A local [Model Context Protocol](https://modelcontextprotocol.io/) server for Stripe payment operations. 52 tools across 8 domains, with built-in PII redaction and input validation.
 
 Built for AI-assisted development workflows where Stripe API access needs to be both comprehensive and safe by default.
 
@@ -83,7 +83,7 @@ Every Stripe API response is sanitised before reaching MCP output:
 - **Unknown objects**: unrecognised Stripe object types reduced to a minimal envelope (`id`, `object`, `status`, `redacted: true`) instead of passed through raw
 - **Input validation**: Stripe IDs, currency codes, webhook event names, API versions, checkout payment method types, and balance transaction types validated against Zod schemas. Enum validators are derived from the installed Stripe SDK's type declarations at startup; if those files change shape in a future SDK version, validators degrade to allow-all with a stderr warning rather than crashing
 - **Idempotency**: all mutating tools accept optional `idempotency_key` (except deletions, which Stripe treats as inherently idempotent)
-- **Pinned API version**: `2025-02-24.acacia`, set in `src/stripe-client.ts`
+- **Pinned API version**: `2026-05-27.dahlia`, set in `src/stripe-client.ts`
 - **Bounded runtime**: network retries capped at 0-5, timeout capped at 1-120 seconds
 
 ## Setup
@@ -204,7 +204,7 @@ tests/
 
 **Sanitise by default, not by opt-in.** Every Stripe object type has an explicit sanitisation path. Unknown object types are reduced rather than passed through. This means new Stripe object types added in future API versions are safe by default (they show `id`, `status`, and `redacted: true` until an explicit handler is added).
 
-**Validate from Stripe's own type definitions.** Checkout payment method types, webhook event names, and API versions are loaded at startup from the installed Stripe SDK's TypeScript declaration files. When you upgrade the Stripe SDK, the validators update automatically.
+**Validate from Stripe's own type definitions.** Checkout payment method types, webhook event names, and API versions are loaded at startup from the installed Stripe SDK's TypeScript declaration files. When you upgrade the Stripe SDK, the validators update automatically. If the SDK restructures its type files in a future major version, validators degrade to allow-all with a stderr warning rather than crashing. The wildcard `*` webhook event is always rejected regardless of validator state.
 
 **No stored state.** The server holds no data between requests beyond the Stripe SDK client singleton. All state lives in Stripe's API.
 

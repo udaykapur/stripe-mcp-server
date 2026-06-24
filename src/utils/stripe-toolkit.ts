@@ -18,44 +18,56 @@ const EMAIL_KEYS = new Set(["email", "customer_email", "receipt_email", "support
 const PHONE_KEYS = new Set(["phone", "support_phone"]);
 const ADDRESS_KEYS = new Set(["address", "billing_details", "shipping"]);
 const URL_REDACT_KEYS = new Set(["hosted_invoice_url", "invoice_pdf"]);
+const FREE_TEXT_KEYS = new Set(["name", "description", "nickname", "footer", "statement_descriptor"]);
 const require = createRequire(import.meta.url);
 const stripePackageRoot = path.dirname(path.dirname(require.resolve("stripe")));
 
-function loadStripeUnionValues(relativeTypeFile: string, typeName: string): string[] {
-  const filePath = path.join(stripePackageRoot, relativeTypeFile);
+function loadStripeUnionValues(candidatePaths: string[], typeName: string): string[] {
+  for (const relPath of candidatePaths) {
+    const filePath = path.join(stripePackageRoot, relPath);
 
-  let contents: string;
-  try {
-    contents = fs.readFileSync(filePath, "utf8");
-  } catch {
-    console.error(`stripe-mcp: type file not found: ${filePath}. Validation for ${typeName} disabled.`);
-    return [];
+    let contents: string;
+    try {
+      contents = fs.readFileSync(filePath, "utf8");
+    } catch {
+      continue;
+    }
+
+    const match = contents.match(new RegExp(`type\\s+${typeName}\\s*=([\\s\\S]*?);`));
+    if (!match) {
+      continue;
+    }
+
+    return [...match[1]!.matchAll(/'([^']+)'/g)].map((entry) => entry[1]!);
   }
 
-  const match = contents.match(new RegExp(`type\\s+${typeName}\\s*=([\\s\\S]*?);`));
-
-  if (!match) {
-    console.error(`stripe-mcp: type union ${typeName} not found in ${relativeTypeFile}. Validation disabled.`);
-    return [];
-  }
-
-  const block = match[1]!;
-  return [...block.matchAll(/'([^']+)'/g)].map((entry) => entry[1]!);
+  console.error(`stripe-mcp: ${typeName} not found in any candidate path. Validation disabled.`);
+  return [];
 }
 
 const checkoutPaymentMethodTypes = new Set(
-  loadStripeUnionValues("types/Checkout/SessionsResource.d.ts", "PaymentMethodType"),
-);
-const webhookEnabledEvents = new Set(
-  loadStripeUnionValues("types/WebhookEndpointsResource.d.ts", "EnabledEvent").filter(
-    (value) => value !== "*",
+  loadStripeUnionValues(
+    ["cjs/resources/Checkout/Sessions.d.ts", "types/Checkout/SessionsResource.d.ts"],
+    "PaymentMethodType",
   ),
 );
+const webhookEnabledEvents = new Set(
+  loadStripeUnionValues(
+    ["cjs/resources/WebhookEndpoints.d.ts", "types/WebhookEndpointsResource.d.ts"],
+    "EnabledEvent",
+  ).filter((value) => value !== "*"),
+);
 const webhookApiVersions = new Set(
-  loadStripeUnionValues("types/WebhookEndpointsResource.d.ts", "ApiVersion"),
+  loadStripeUnionValues(
+    ["cjs/resources/WebhookEndpoints.d.ts", "types/WebhookEndpointsResource.d.ts"],
+    "ApiVersion",
+  ),
 );
 const balanceTransactionTypes = new Set(
-  loadStripeUnionValues("types/BalanceTransactions.d.ts", "Type"),
+  loadStripeUnionValues(
+    ["cjs/resources/BalanceTransactions.d.ts", "types/BalanceTransactions.d.ts"],
+    "Type",
+  ),
 );
 
 export const currencySchema = z
@@ -90,6 +102,7 @@ export const checkoutPaymentMethodTypeSchema = z
 
 export const webhookEnabledEventSchema = z
   .string()
+  .refine((value) => value !== "*", "Wildcard '*' is not allowed. Subscribe to specific event types.")
   .refine(
     (value) => webhookEnabledEvents.size === 0 || webhookEnabledEvents.has(value),
     "Must be a valid explicit Stripe webhook event type.",
@@ -576,6 +589,11 @@ function sanitizeGenericObject(record: Record<string, unknown>): Record<string, 
       continue;
     }
 
+    if (FREE_TEXT_KEYS.has(key)) {
+      result[key] = maskFreeText(value);
+      continue;
+    }
+
     result[key] = sanitizeValue(value, key);
   }
 
@@ -593,6 +611,10 @@ function sanitizeScalarValue(value: unknown, keyName?: string): unknown {
 
   if (keyName && PHONE_KEYS.has(keyName)) {
     return maskPhone(value);
+  }
+
+  if (keyName && FREE_TEXT_KEYS.has(keyName)) {
+    return maskFreeText(value);
   }
 
   return value;

@@ -310,6 +310,7 @@ export function registerPaymentTools(server: McpServer): void {
       try {
         const pm = await stripe.paymentMethods.detach(
           payment_method_id,
+          {},
           buildStripeRequestOptions(idempotency_key),
         );
         return stripeSuccessResult(pm);

@@ -42,7 +42,7 @@ export function registerResources(server: McpServer): void {
     },
     async () => {
       try {
-        const account = await stripe.accounts.retrieve();
+        const account = await stripe.accounts.retrieve(null);
         return jsonResource("stripe://account", account);
       } catch (err) {
         return errorResource("stripe://account", "Error retrieving account", err);

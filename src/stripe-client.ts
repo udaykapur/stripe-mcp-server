@@ -3,7 +3,7 @@
  */
 import Stripe from "stripe";
 
-export const STRIPE_API_VERSION: Stripe.LatestApiVersion = "2025-02-24.acacia";
+export const STRIPE_API_VERSION = "2026-05-27.dahlia" as const;
 const DEFAULT_MAX_NETWORK_RETRIES = 2;
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_NETWORK_RETRIES_LIMIT = 5;
@@ -18,7 +18,7 @@ export class StripeConfigError extends Error {
 }
 
 export interface StripeRuntimeConfig {
-  apiVersion: Stripe.LatestApiVersion;
+  apiVersion: typeof STRIPE_API_VERSION;
   maxNetworkRetries: number;
   timeout: number;
 }

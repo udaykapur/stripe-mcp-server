@@ -42,7 +42,7 @@ export const createInvoiceItemSchema = z
     invoice: stripeIdSchema("in_")
       .optional()
       .describe("Invoice ID (in_...). Omit to add to next upcoming invoice."),
-    price: stripeIdSchema("price_")
+    pricing_price: stripeIdSchema("price_")
       .optional()
       .describe("Price ID (price_...) - use this OR amount+currency"),
     amount: z
@@ -57,21 +57,21 @@ export const createInvoiceItemSchema = z
     idempotency_key: idempotencyKeySchema.optional().describe("Optional idempotency key for safe retries"),
   })
   .superRefine((value, ctx) => {
-    const hasPrice = value.price !== undefined;
+    const hasPrice = value.pricing_price !== undefined;
     const hasAmountCurrency = value.amount !== undefined || value.currency !== undefined;
 
     if (hasPrice && hasAmountCurrency) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Use either price or amount+currency, not both.",
-        path: ["price"],
+        message: "Use either pricing_price or amount+currency, not both.",
+        path: ["pricing_price"],
       });
     }
 
     if (!hasPrice && !(value.amount !== undefined && value.currency !== undefined)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Provide price or both amount and currency.",
+        message: "Provide pricing_price or both amount and currency.",
         path: ["amount"],
       });
     }
@@ -120,7 +120,7 @@ export function registerInvoiceTools(server: McpServer): void {
           {
             customer: params.customer,
             invoice: params.invoice,
-            price: params.price,
+            pricing: params.pricing_price ? { price: params.pricing_price } : undefined,
             amount: params.amount,
             currency: params.currency,
             description: params.description,
@@ -162,6 +162,7 @@ export function registerInvoiceTools(server: McpServer): void {
       title: "Finalize Invoice",
       description:
         "Finalize a draft invoice so it can be paid. This transitions it from draft to open.",
+      annotations: { destructiveHint: true },
       inputSchema: {
         invoice_id: stripeIdSchema("in_").describe("Invoice ID (in_...)"),
         auto_advance: z.boolean().optional().describe("Auto-advance to payment after finalization"),
@@ -223,6 +224,7 @@ export function registerInvoiceTools(server: McpServer): void {
       try {
         const invoice = await stripe.invoices.voidInvoice(
           invoice_id,
+          {},
           buildStripeRequestOptions(idempotency_key),
         );
         return stripeSuccessResult(invoice);
@@ -276,7 +278,7 @@ export function registerInvoiceTools(server: McpServer): void {
     },
     async ({ customer, subscription }) => {
       try {
-        const invoice = await stripe.invoices.retrieveUpcoming({
+        const invoice = await stripe.invoices.createPreview({
           customer,
           subscription,
         });

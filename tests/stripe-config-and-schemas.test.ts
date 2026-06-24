@@ -175,6 +175,50 @@ describe("tool discovery (MCP listTools)", () => {
       expect(names).toContain(expected);
     }
 
+    const destructiveTools = [
+      "create_payment_intent",
+      "confirm_payment_intent",
+      "capture_payment_intent",
+      "cancel_payment_intent",
+      "create_refund",
+      "create_subscription",
+      "update_subscription",
+      "cancel_subscription",
+      "create_webhook_endpoint",
+      "delete_webhook_endpoint",
+      "detach_payment_method",
+      "pay_invoice",
+      "void_invoice",
+      "finalize_invoice",
+    ];
+
+    for (const toolName of destructiveTools) {
+      const tool = tools.find((t) => t.name === toolName);
+      expect(tool, `${toolName} should exist`).toBeDefined();
+      expect(
+        tool!.annotations?.destructiveHint,
+        `${toolName} should have destructiveHint`,
+      ).toBe(true);
+    }
+
     await client.close();
+  });
+});
+
+describe("webhook wildcard rejection", () => {
+  it("rejects wildcard * even when enum set is loaded", () => {
+    const result = createWebhookEndpointSchema.safeParse({
+      url: "https://example.com/webhook",
+      enabled_events: ["*"],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts valid explicit events", () => {
+    const result = createWebhookEndpointSchema.safeParse({
+      url: "https://example.com/webhook",
+      enabled_events: ["payment_intent.succeeded"],
+    });
+    expect(result.success).toBe(true);
   });
 });
