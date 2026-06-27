@@ -33,9 +33,9 @@ const createPaymentIntentSchema = z.object({
   receipt_email: z.string().email().optional().describe("Email to send receipt to"),
   statement_descriptor: z.string().max(22).optional().describe("Statement descriptor (max 22 chars)"),
   capture_method: z
-    .enum(["automatic", "manual"])
+    .enum(["automatic", "automatic_async", "manual"])
     .optional()
-    .describe('"automatic" (default) or "manual" for auth-then-capture'),
+    .describe('"automatic" (default), "automatic_async", or "manual" for auth-then-capture'),
   off_session: z.boolean().optional().describe("Set true if payment is made without customer present"),
   idempotency_key: idempotencyKeySchema.optional().describe("Optional idempotency key for safe retries"),
 });
@@ -61,7 +61,9 @@ export function registerPaymentTools(server: McpServer): void {
             payment_method: params.payment_method,
             confirm: params.confirm,
             automatic_payment_methods:
-              params.automatic_payment_methods !== false ? { enabled: true } : undefined,
+              params.automatic_payment_methods === false
+                ? { enabled: false }
+                : { enabled: true },
             metadata: params.metadata,
             receipt_email: params.receipt_email,
             statement_descriptor: params.statement_descriptor,

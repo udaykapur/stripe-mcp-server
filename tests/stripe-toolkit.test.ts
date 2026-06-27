@@ -241,6 +241,53 @@ describe("free-text sanitisation", () => {
   });
 });
 
+describe("webhook URL sanitisation", () => {
+  it("strips query params from webhook URLs", () => {
+    const result = sanitizeStripeResponse({
+      object: "webhook_endpoint",
+      id: "we_123",
+      url: "https://example.com/webhook?token=secret123&key=abc",
+      enabled_events: ["payment_intent.succeeded"],
+    }) as Record<string, unknown>;
+
+    expect(result.url).toBe("https://example.com/webhook [query/userinfo redacted]");
+  });
+
+  it("passes clean webhook URLs through", () => {
+    const result = sanitizeStripeResponse({
+      object: "webhook_endpoint",
+      id: "we_123",
+      url: "https://example.com/webhook",
+      enabled_events: ["payment_intent.succeeded"],
+    }) as Record<string, unknown>;
+
+    expect(result.url).toBe("https://example.com/webhook");
+  });
+});
+
+describe("expanded payment method sanitisation", () => {
+  it("sanitises expanded default_payment_method in invoice_settings", () => {
+    const result = sanitizeStripeResponse({
+      object: "customer",
+      id: "cus_123",
+      invoice_settings: {
+        default_payment_method: {
+          object: "payment_method",
+          id: "pm_123",
+          billing_details: { name: "Secret Name", email: "a@b.com" },
+          card: { last4: "4242" },
+        },
+        footer: "Footer text",
+      },
+    }) as Record<string, unknown>;
+
+    const settings = result.invoice_settings as Record<string, unknown>;
+    const pm = settings.default_payment_method as Record<string, unknown>;
+    expect(pm.id).toBe("pm_123");
+    expect(pm.billing_details).toEqual({ redacted: true });
+  });
+});
+
 describe("formatStripeError", () => {
   it("formats raw Stripe-like errors safely", () => {
     expect(

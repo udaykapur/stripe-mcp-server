@@ -43,6 +43,13 @@ export const createSubscriptionSchema = z
         path: ["days_until_due"],
       });
     }
+    if (value.discount_coupon && value.discount_promotion_code) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide discount_coupon or discount_promotion_code, not both.",
+        path: ["discount_coupon"],
+      });
+    }
   });
 
 export function registerSubscriptionTools(server: McpServer): void {

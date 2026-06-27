@@ -14,7 +14,7 @@ import { createRefundSchema, registerRefundTools } from "../src/tools/refunds.js
 import { createWebhookEndpointSchema, registerWebhookTools } from "../src/tools/webhooks.js";
 import { registerCustomerTools } from "../src/tools/customers.js";
 import { registerPaymentTools } from "../src/tools/payments.js";
-import { registerSubscriptionTools } from "../src/tools/subscriptions.js";
+import { createSubscriptionSchema, registerSubscriptionTools } from "../src/tools/subscriptions.js";
 import { registerInvoiceTools } from "../src/tools/invoices.js";
 import { registerBalanceTools } from "../src/tools/balance.js";
 
@@ -103,6 +103,18 @@ describe("schema hardening", () => {
   });
 });
 
+describe("subscription discount mutual exclusion", () => {
+  it("rejects both discount_coupon and discount_promotion_code", () => {
+    const result = createSubscriptionSchema.safeParse({
+      customer: "cus_123",
+      items: [{ price: "price_123" }],
+      discount_coupon: "coupon_abc",
+      discount_promotion_code: "promo_xyz",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("key prefix validation", () => {
   it("rejects publishable keys at startup", () => {
     resetStripeClientForTests();
@@ -184,9 +196,11 @@ describe("tool discovery (MCP listTools)", () => {
       "create_subscription",
       "update_subscription",
       "cancel_subscription",
+      "create_checkout_session",
       "create_webhook_endpoint",
       "delete_webhook_endpoint",
       "detach_payment_method",
+      "create_invoice_item",
       "pay_invoice",
       "void_invoice",
       "finalize_invoice",

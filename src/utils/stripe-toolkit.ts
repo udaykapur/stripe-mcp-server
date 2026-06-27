@@ -545,7 +545,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         id: record.id,
         created: record.created,
         livemode: record.livemode,
-        url: record.url,
+        url: sanitiseWebhookUrl(record.url),
         status: record.status,
         api_version: record.api_version,
         application: record.application,
@@ -681,7 +681,7 @@ function sanitizeInvoiceSettings(value: unknown): unknown {
 
   const record = value as Record<string, unknown>;
   return pickDefined({
-    default_payment_method: record.default_payment_method,
+    default_payment_method: sanitizeValue(record.default_payment_method),
     footer: maskFreeText(record.footer),
   });
 }
@@ -787,6 +787,21 @@ function maskFreeText(value: unknown): unknown {
   }
 
   return `${value.slice(0, 40)}... [truncated, ${value.length} chars]`;
+}
+
+function sanitiseWebhookUrl(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  try {
+    const parsed = new URL(value);
+    if (parsed.search || parsed.username) {
+      return `${parsed.origin}${parsed.pathname} [query/userinfo redacted]`;
+    }
+    return value;
+  } catch {
+    return value;
+  }
 }
 
 function pickDefined<T extends Record<string, unknown>>(value: T): T {

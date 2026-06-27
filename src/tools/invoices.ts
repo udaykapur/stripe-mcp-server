@@ -112,6 +112,7 @@ export function registerInvoiceTools(server: McpServer): void {
       title: "Create Invoice Item",
       description:
         "Add a line item to an invoice (or to the customer's next upcoming invoice).",
+      annotations: { destructiveHint: true },
       inputSchema: createInvoiceItemSchema,
     },
     async (params) => {

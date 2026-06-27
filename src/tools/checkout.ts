@@ -148,6 +148,7 @@ export function registerCheckoutTools(server: McpServer): void {
       title: "Create Checkout Session",
       description:
         "Create a Stripe Checkout session. Returns a URL to redirect customers to Stripe-hosted payment page.",
+      annotations: { destructiveHint: true },
       inputSchema: createCheckoutSessionSchema,
     },
     async (params) => {
