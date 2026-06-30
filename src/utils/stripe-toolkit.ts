@@ -343,8 +343,6 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         canceled_at: record.canceled_at,
         cancel_at_period_end: record.cancel_at_period_end,
         collection_method: record.collection_method,
-        current_period_end: record.current_period_end,
-        current_period_start: record.current_period_start,
         default_payment_method: sanitizeValue(record.default_payment_method),
         latest_invoice: sanitizeValue(record.latest_invoice),
         items: sanitizeSubscriptionItems(record.items),
@@ -404,14 +402,14 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
       return pickDefined({
         object: "invoiceitem",
         id: record.id,
-        created: record.created,
+        date: record.date,
         livemode: record.livemode,
         customer: sanitizeValue(record.customer),
         invoice: sanitizeValue(record.invoice),
         amount: record.amount,
         currency: record.currency,
         description: maskFreeText(record.description),
-        price: sanitizeValue(record.price),
+        pricing: sanitizeValue(record.pricing),
         quantity: record.quantity,
         metadata: sanitizeMetadata(record.metadata),
       });
@@ -594,6 +592,11 @@ function sanitizeGenericObject(record: Record<string, unknown>): Record<string, 
       continue;
     }
 
+    if (key === "url" && typeof value === "string") {
+      result[key] = sanitiseWebhookUrl(value);
+      continue;
+    }
+
     result[key] = sanitizeValue(value, key);
   }
 
@@ -699,6 +702,8 @@ function sanitizeSubscriptionItems(value: unknown): unknown {
           id: itemRecord.id,
           price: sanitizeValue(itemRecord.price),
           quantity: itemRecord.quantity,
+          current_period_start: itemRecord.current_period_start,
+          current_period_end: itemRecord.current_period_end,
         });
       })
     : undefined;
@@ -795,8 +800,8 @@ function sanitiseWebhookUrl(value: unknown): unknown {
   }
   try {
     const parsed = new URL(value);
-    if (parsed.search || parsed.username) {
-      return `${parsed.origin}${parsed.pathname} [query/userinfo redacted]`;
+    if (parsed.search || parsed.username || parsed.hash) {
+      return `${parsed.origin}${parsed.pathname} [query/userinfo/hash redacted]`;
     }
     return value;
   } catch {

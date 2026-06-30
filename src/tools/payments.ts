@@ -251,9 +251,9 @@ export function registerPaymentTools(server: McpServer): void {
       inputSchema: {
         customer: stripeIdSchema("cus_").describe("Customer ID (cus_...)"),
         type: z
-          .enum(["card", "us_bank_account", "sepa_debit", "bacs_debit", "au_becs_debit", "link"])
+          .string()
           .optional()
-          .describe("Filter by payment method type"),
+          .describe("Filter by payment method type (e.g. card, us_bank_account, sepa_debit, paypal, link, cashapp, amazon_pay)"),
         limit: z.number().min(1).max(100).optional().describe("Results per page"),
       },
       annotations: { readOnlyHint: true },
@@ -262,7 +262,7 @@ export function registerPaymentTools(server: McpServer): void {
       try {
         const pms = await stripe.paymentMethods.list({
           customer,
-          type,
+          type: type as "card" | undefined,
           limit: limit ?? 10,
         });
         return stripeSuccessResult(pms);

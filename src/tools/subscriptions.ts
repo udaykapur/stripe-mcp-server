@@ -31,8 +31,8 @@ export const createSubscriptionSchema = z
       .optional()
       .describe("How to collect payment"),
     days_until_due: z.number().int().positive().optional().describe("Days until invoice is due (for send_invoice)"),
-    discount_coupon: z.string().optional().describe("Coupon ID to apply as discount"),
-    discount_promotion_code: z.string().optional().describe("Promotion code ID to apply as discount"),
+    discount_coupon: z.string().min(1).optional().describe("Coupon ID to apply as discount"),
+    discount_promotion_code: z.string().min(1).optional().describe("Promotion code ID to apply as discount"),
     idempotency_key: idempotencyKeySchema.optional().describe("Optional idempotency key for safe retries"),
   })
   .superRefine((value, ctx) => {
@@ -43,7 +43,7 @@ export const createSubscriptionSchema = z
         path: ["days_until_due"],
       });
     }
-    if (value.discount_coupon && value.discount_promotion_code) {
+    if (value.discount_coupon !== undefined && value.discount_promotion_code !== undefined) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Provide discount_coupon or discount_promotion_code, not both.",
@@ -217,7 +217,7 @@ export function registerSubscriptionTools(server: McpServer): void {
       inputSchema: {
         customer: stripeIdSchema("cus_").optional().describe("Filter by customer ID"),
         price: stripeIdSchema("price_").optional().describe("Filter by price ID"),
-        status: z.enum(["active", "past_due", "unpaid", "canceled", "incomplete", "incomplete_expired", "trialing", "all"]).optional().describe("Filter by status"),
+        status: z.enum(["active", "past_due", "unpaid", "canceled", "ended", "incomplete", "incomplete_expired", "paused", "trialing", "all"]).optional().describe("Filter by status"),
         limit: z.number().min(1).max(100).optional().describe("Results per page"),
         starting_after: stripeIdSchema("sub_").optional().describe("Pagination cursor"),
       },
@@ -251,7 +251,7 @@ export function registerSubscriptionTools(server: McpServer): void {
         metadata: z.record(z.string(), z.string()).optional().describe("Metadata"),
         default_price_data: z
           .object({
-            unit_amount: z.number().int().positive().describe("Price in smallest currency unit"),
+            unit_amount: z.number().int().nonnegative().describe("Price in smallest currency unit (0 for free)"),
             currency: currencySchema.describe('Currency code (e.g. "usd")'),
             recurring: z
               .object({
@@ -318,7 +318,7 @@ export function registerSubscriptionTools(server: McpServer): void {
       description: "Create a new price for a product.",
       inputSchema: {
         product: stripeIdSchema("prod_").describe("Product ID (prod_...)"),
-        unit_amount: z.number().int().positive().describe("Price in smallest currency unit (e.g. 1000 = $10.00)"),
+        unit_amount: z.number().int().nonnegative().describe("Price in smallest currency unit (e.g. 1000 = $10.00, 0 for free)"),
         currency: currencySchema.describe('Currency code (e.g. "usd")'),
         recurring: z
           .object({

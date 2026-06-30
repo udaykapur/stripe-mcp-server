@@ -250,7 +250,7 @@ describe("webhook URL sanitisation", () => {
       enabled_events: ["payment_intent.succeeded"],
     }) as Record<string, unknown>;
 
-    expect(result.url).toBe("https://example.com/webhook [query/userinfo redacted]");
+    expect(result.url).toBe("https://example.com/webhook [query/userinfo/hash redacted]");
   });
 
   it("passes clean webhook URLs through", () => {
