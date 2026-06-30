@@ -134,7 +134,7 @@ export function registerSubscriptionTools(server: McpServer): void {
         metadata: z.record(z.string(), z.string()).optional().describe("Metadata to update"),
         proration_behavior: z.enum(["create_prorations", "none", "always_invoice"]).optional().describe("How to handle prorations"),
         trial_end: z.union([z.number().int(), z.literal("now")]).optional().describe('Trial end timestamp or "now" to end immediately'),
-        discount_coupon: z.string().optional().describe("Coupon ID to apply as discount"),
+        discount_coupon: z.string().min(1).optional().describe("Coupon ID to apply as discount"),
         idempotency_key: idempotencyKeySchema.optional().describe("Optional idempotency key for safe retries"),
       },
     },
@@ -149,7 +149,9 @@ export function registerSubscriptionTools(server: McpServer): void {
             metadata: params.metadata,
             proration_behavior: params.proration_behavior,
             trial_end: params.trial_end,
-            discounts: params.discount_coupon ? [{ coupon: params.discount_coupon }] : undefined,
+            discounts: params.discount_coupon !== undefined
+              ? [{ coupon: params.discount_coupon }]
+              : undefined,
           },
           buildStripeRequestOptions(idempotency_key),
         );

@@ -251,9 +251,16 @@ export function registerPaymentTools(server: McpServer): void {
       inputSchema: {
         customer: stripeIdSchema("cus_").describe("Customer ID (cus_...)"),
         type: z
-          .string()
+          .enum([
+            "card", "us_bank_account", "sepa_debit", "bacs_debit", "au_becs_debit",
+            "link", "paypal", "cashapp", "amazon_pay", "affirm", "afterpay_clearpay",
+            "alipay", "bancontact", "boleto", "eps", "fpx", "giropay", "grabpay",
+            "ideal", "klarna", "konbini", "oxxo", "p24", "paynow", "pix",
+            "promptpay", "revolut_pay", "sofort", "wechat_pay", "acss_debit",
+            "customer_balance", "upi", "swish", "mobilepay", "multibanco", "zip",
+          ])
           .optional()
-          .describe("Filter by payment method type (e.g. card, us_bank_account, sepa_debit, paypal, link, cashapp, amazon_pay)"),
+          .describe("Filter by payment method type"),
         limit: z.number().min(1).max(100).optional().describe("Results per page"),
       },
       annotations: { readOnlyHint: true },
@@ -262,7 +269,7 @@ export function registerPaymentTools(server: McpServer): void {
       try {
         const pms = await stripe.paymentMethods.list({
           customer,
-          type: type as "card" | undefined,
+          type,
           limit: limit ?? 10,
         });
         return stripeSuccessResult(pms);

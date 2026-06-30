@@ -253,6 +253,17 @@ describe("webhook URL sanitisation", () => {
     expect(result.url).toBe("https://example.com/webhook [query/userinfo/hash redacted]");
   });
 
+  it("strips password-only credentials from webhook URLs", () => {
+    const result = sanitizeStripeResponse({
+      object: "webhook_endpoint",
+      id: "we_123",
+      url: "https://:secret@example.com/webhook",
+      enabled_events: ["payment_intent.succeeded"],
+    }) as Record<string, unknown>;
+
+    expect(result.url).toBe("https://example.com/webhook [query/userinfo/hash redacted]");
+  });
+
   it("passes clean webhook URLs through", () => {
     const result = sanitizeStripeResponse({
       object: "webhook_endpoint",

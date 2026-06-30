@@ -183,7 +183,7 @@ export function formatStripeError(error: unknown): Record<string, unknown> {
 
     return {
       type,
-      message: error.message,
+      message: sanitiseErrorMessage(error.message),
       code: typeof error.code === "string" ? error.code : undefined,
       param: typeof error.param === "string" ? error.param : undefined,
       request_id:
@@ -383,7 +383,7 @@ function sanitizeValue(data: unknown, keyName?: string): unknown {
         created: record.created,
         livemode: record.livemode,
         customer: sanitizeValue(record.customer),
-        subscription: sanitizeValue(record.subscription),
+        parent: sanitizeInvoiceParent(record.parent),
         status: record.status,
         collection_method: record.collection_method,
         amount_due: record.amount_due,
@@ -689,6 +689,25 @@ function sanitizeInvoiceSettings(value: unknown): unknown {
   });
 }
 
+function sanitizeInvoiceParent(value: unknown): unknown {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const subDetails = record.subscription_details as Record<string, unknown> | null | undefined;
+  return pickDefined({
+    type: record.type,
+    subscription_details: subDetails
+      ? pickDefined({
+          subscription: typeof subDetails.subscription === "string"
+            ? subDetails.subscription
+            : sanitizeValue(subDetails.subscription),
+        })
+      : undefined,
+  });
+}
+
 function sanitizeSubscriptionItems(value: unknown): unknown {
   if (!value || typeof value !== "object") {
     return undefined;
@@ -794,13 +813,22 @@ function maskFreeText(value: unknown): unknown {
   return `${value.slice(0, 40)}... [truncated, ${value.length} chars]`;
 }
 
+function sanitiseErrorMessage(message: unknown): unknown {
+  if (typeof message !== "string") {
+    return message;
+  }
+  return message
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[email redacted]")
+    .replace(/https?:\/\/[^\s"']+/g, "[url redacted]");
+}
+
 function sanitiseWebhookUrl(value: unknown): unknown {
   if (typeof value !== "string") {
     return value;
   }
   try {
     const parsed = new URL(value);
-    if (parsed.search || parsed.username || parsed.hash) {
+    if (parsed.search || parsed.username || parsed.password || parsed.hash) {
       return `${parsed.origin}${parsed.pathname} [query/userinfo/hash redacted]`;
     }
     return value;
