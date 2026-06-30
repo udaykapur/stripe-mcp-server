@@ -17,7 +17,7 @@ const OMITTED_KEYS = new Set([
 const EMAIL_KEYS = new Set(["email", "customer_email", "receipt_email", "support_email"]);
 const PHONE_KEYS = new Set(["phone", "support_phone"]);
 const ADDRESS_KEYS = new Set(["address", "billing_details", "shipping"]);
-const URL_REDACT_KEYS = new Set(["hosted_invoice_url", "invoice_pdf"]);
+const URL_REDACT_KEYS = new Set(["hosted_invoice_url", "invoice_pdf", "receipt_url"]);
 const FREE_TEXT_KEYS = new Set(["name", "description", "nickname", "footer", "statement_descriptor"]);
 const require = createRequire(import.meta.url);
 const stripePackageRoot = path.dirname(path.dirname(require.resolve("stripe")));
@@ -69,11 +69,12 @@ const balanceTransactionTypes = new Set(
     "Type",
   ),
 );
+const TERMINAL_ONLY_TYPES = new Set(["card_present", "interac_present"]);
 const paymentMethodTypes = new Set(
   loadStripeUnionValues(
     ["cjs/resources/PaymentMethods.d.ts", "types/PaymentMethodsResource.d.ts"],
     "Type",
-  ),
+  ).filter((t) => !TERMINAL_ONLY_TYPES.has(t)),
 );
 
 export const currencySchema = z
@@ -212,14 +213,14 @@ export function formatStripeError(error: unknown): Record<string, unknown> {
   if (error instanceof Error) {
     return {
       type: error.name,
-      message: error.message,
+      message: sanitiseErrorMessage(error.message),
       retryable: false,
     };
   }
 
   return {
     type: "UnknownError",
-    message: String(error),
+    message: sanitiseErrorMessage(String(error)),
     retryable: false,
   };
 }
