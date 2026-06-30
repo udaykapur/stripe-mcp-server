@@ -21,7 +21,7 @@ const subscriptionItemSchema = z.object({
 export const createSubscriptionSchema = z
   .object({
     customer: stripeIdSchema("cus_").describe("Customer ID (cus_...)"),
-    items: z.array(subscriptionItemSchema).min(1).describe("Subscription line items"),
+    items: z.array(subscriptionItemSchema).min(1).max(20).describe("Subscription line items"),
     default_payment_method: stripeIdSchema("pm_").optional().describe("Payment method ID to use"),
     trial_period_days: z.number().int().min(1).optional().describe("Free trial days"),
     cancel_at_period_end: z.boolean().optional().describe("Cancel at end of current period"),
@@ -127,6 +127,7 @@ export function registerSubscriptionTools(server: McpServer): void {
               deleted: z.boolean().optional().describe("Set true to remove this item"),
             }),
           )
+          .max(20)
           .optional()
           .describe("Updated line items"),
         cancel_at_period_end: z.boolean().optional().describe("Cancel at end of period"),
