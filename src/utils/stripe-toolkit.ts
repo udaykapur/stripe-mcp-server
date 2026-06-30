@@ -69,6 +69,12 @@ const balanceTransactionTypes = new Set(
     "Type",
   ),
 );
+const paymentMethodTypes = new Set(
+  loadStripeUnionValues(
+    ["cjs/resources/PaymentMethods.d.ts", "types/PaymentMethodsResource.d.ts"],
+    "Type",
+  ),
+);
 
 export const currencySchema = z
   .string()
@@ -120,6 +126,13 @@ export const balanceTransactionTypeSchema = z
   .refine(
     (value) => balanceTransactionTypes.size === 0 || balanceTransactionTypes.has(value),
     "Must be a valid Stripe balance transaction type.",
+  );
+
+export const paymentMethodTypeSchema = z
+  .string()
+  .refine(
+    (value) => paymentMethodTypes.size === 0 || paymentMethodTypes.has(value),
+    "Must be a valid Stripe payment method type.",
   );
 
 export function stripeIdSchema(prefix: string): z.ZodString {
@@ -828,12 +841,9 @@ function sanitiseWebhookUrl(value: unknown): unknown {
   }
   try {
     const parsed = new URL(value);
-    if (parsed.search || parsed.username || parsed.password || parsed.hash) {
-      return `${parsed.origin}${parsed.pathname} [query/userinfo/hash redacted]`;
-    }
-    return value;
+    return parsed.origin;
   } catch {
-    return value;
+    return "[invalid url redacted]";
   }
 }
 

@@ -84,6 +84,7 @@ export function registerInvoiceTools(server: McpServer): void {
       title: "Create Invoice",
       description:
         "Create a draft invoice for a customer. Add invoice items before finalizing.",
+      annotations: { destructiveHint: true },
       inputSchema: createInvoiceSchema,
     },
     async (params) => {

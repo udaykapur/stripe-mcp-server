@@ -188,6 +188,8 @@ describe("tool discovery (MCP listTools)", () => {
     }
 
     const destructiveTools = [
+      "update_customer",
+      "delete_customer",
       "create_payment_intent",
       "confirm_payment_intent",
       "capture_payment_intent",
@@ -200,6 +202,7 @@ describe("tool discovery (MCP listTools)", () => {
       "create_webhook_endpoint",
       "delete_webhook_endpoint",
       "detach_payment_method",
+      "create_invoice",
       "create_invoice_item",
       "pay_invoice",
       "void_invoice",

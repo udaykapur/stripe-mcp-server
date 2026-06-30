@@ -242,7 +242,7 @@ describe("free-text sanitisation", () => {
 });
 
 describe("webhook URL sanitisation", () => {
-  it("strips query params from webhook URLs", () => {
+  it("reduces webhook URL to origin only", () => {
     const result = sanitizeStripeResponse({
       object: "webhook_endpoint",
       id: "we_123",
@@ -250,21 +250,21 @@ describe("webhook URL sanitisation", () => {
       enabled_events: ["payment_intent.succeeded"],
     }) as Record<string, unknown>;
 
-    expect(result.url).toBe("https://example.com/webhook [query/userinfo/hash redacted]");
+    expect(result.url).toBe("https://example.com");
   });
 
-  it("strips password-only credentials from webhook URLs", () => {
+  it("strips path tokens and credentials from webhook URLs", () => {
     const result = sanitizeStripeResponse({
       object: "webhook_endpoint",
       id: "we_123",
-      url: "https://:secret@example.com/webhook",
+      url: "https://:secret@example.com/webhook/sk_live_abc123",
       enabled_events: ["payment_intent.succeeded"],
     }) as Record<string, unknown>;
 
-    expect(result.url).toBe("https://example.com/webhook [query/userinfo/hash redacted]");
+    expect(result.url).toBe("https://example.com");
   });
 
-  it("passes clean webhook URLs through", () => {
+  it("reduces clean webhook URLs to origin", () => {
     const result = sanitizeStripeResponse({
       object: "webhook_endpoint",
       id: "we_123",
@@ -272,7 +272,7 @@ describe("webhook URL sanitisation", () => {
       enabled_events: ["payment_intent.succeeded"],
     }) as Record<string, unknown>;
 
-    expect(result.url).toBe("https://example.com/webhook");
+    expect(result.url).toBe("https://example.com");
   });
 });
 

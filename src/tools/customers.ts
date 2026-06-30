@@ -108,6 +108,7 @@ export function registerCustomerTools(server: McpServer): void {
     {
       title: "Update Customer",
       description: "Update an existing Stripe customer's details.",
+      annotations: { destructiveHint: true },
       inputSchema: updateCustomerSchema,
     },
     async ({ customer_id, idempotency_key, ...params }) => {

@@ -2,6 +2,7 @@
  * Payment tools - Payment Intents, Payment Methods, and Charges.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import Stripe from "stripe";
 import { z } from "zod";
 import { stripe } from "../stripe-client.js";
 import {
@@ -9,6 +10,7 @@ import {
   currencySchema,
   httpsUrlSchema,
   idempotencyKeySchema,
+  paymentMethodTypeSchema,
   stripeErrorResult,
   stripeIdSchema,
   stripeSuccessResult,
@@ -250,17 +252,9 @@ export function registerPaymentTools(server: McpServer): void {
       description: "List payment methods attached to a customer.",
       inputSchema: {
         customer: stripeIdSchema("cus_").describe("Customer ID (cus_...)"),
-        type: z
-          .enum([
-            "card", "us_bank_account", "sepa_debit", "bacs_debit", "au_becs_debit",
-            "link", "paypal", "cashapp", "amazon_pay", "affirm", "afterpay_clearpay",
-            "alipay", "bancontact", "boleto", "eps", "fpx", "giropay", "grabpay",
-            "ideal", "klarna", "konbini", "oxxo", "p24", "paynow", "pix",
-            "promptpay", "revolut_pay", "sofort", "wechat_pay", "acss_debit",
-            "customer_balance", "upi", "swish", "mobilepay", "multibanco", "zip",
-          ])
+        type: paymentMethodTypeSchema
           .optional()
-          .describe("Filter by payment method type"),
+          .describe("Filter by payment method type (e.g. card, us_bank_account, paypal)"),
         limit: z.number().min(1).max(100).optional().describe("Results per page"),
       },
       annotations: { readOnlyHint: true },
@@ -269,7 +263,7 @@ export function registerPaymentTools(server: McpServer): void {
       try {
         const pms = await stripe.paymentMethods.list({
           customer,
-          type,
+          type: type as Stripe.PaymentMethodListParams.Type | undefined,
           limit: limit ?? 10,
         });
         return stripeSuccessResult(pms);
