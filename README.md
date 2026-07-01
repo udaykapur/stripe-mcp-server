@@ -173,7 +173,7 @@ Any client that supports stdio transport can run this server. Point it at `dist/
 ## Verification
 
 ```bash
-npm test        # 36 tests (sanitisation, config validation, schema checks)
+npm test        # 41 tests (sanitisation, config validation, schema checks)
 npm run build   # TypeScript compilation to dist/
 ```
 

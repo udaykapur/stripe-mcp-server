@@ -38,7 +38,7 @@ Last updated: 2026-06-23
 ## Verification
 
 ```bash
-npm test        # 36 tests
+npm test        # 41 tests
 npm run build   # TypeScript to dist/
 npm run typecheck  # Type checking without emit
 ```
