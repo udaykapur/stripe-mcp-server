@@ -210,4 +210,4 @@ tests/
 
 ## Licence
 
-ISC
+MIT

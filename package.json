@@ -24,7 +24,7 @@
   "files": [
     "dist/"
   ],
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "stripe": "^22.2.3",
