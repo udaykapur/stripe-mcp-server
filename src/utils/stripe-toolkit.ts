@@ -606,7 +606,7 @@ function sanitizeGenericObject(record: Record<string, unknown>): Record<string, 
       continue;
     }
 
-    if (key === "url" && typeof value === "string") {
+    if (key.endsWith("_url") || key === "url") {
       result[key] = sanitiseWebhookUrl(value);
       continue;
     }
@@ -675,7 +675,7 @@ function sanitizeBusinessProfile(value: unknown): unknown {
     name: maskFreeText(record.name),
     support_email: maskEmail(record.support_email),
     support_phone: maskPhone(record.support_phone),
-    url: record.url,
+    url: sanitiseWebhookUrl(record.url),
   });
 }
 
@@ -833,7 +833,10 @@ function sanitiseErrorMessage(message: unknown): unknown {
   }
   return message
     .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[email redacted]")
-    .replace(/https?:\/\/[^\s"']+/g, "[url redacted]");
+    .replace(/https?:\/\/[^\s"']+/g, "[url redacted]")
+    .replace(/\b(sk|pk|rk)_(test|live)_[A-Za-z0-9]+/g, "[key redacted]")
+    .replace(/\bwhsec_[A-Za-z0-9]+/g, "[secret redacted]")
+    .replace(/\b(pi|seti|cs)_[A-Za-z0-9]*_secret_[A-Za-z0-9]+/g, "[secret redacted]");
 }
 
 function sanitiseWebhookUrl(value: unknown): unknown {

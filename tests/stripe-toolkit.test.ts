@@ -299,6 +299,82 @@ describe("expanded payment method sanitisation", () => {
   });
 });
 
+describe("URL-suffix key redaction", () => {
+  it("redacts *_url keys to origin in event diff objects", () => {
+    const result = sanitizeStripeResponse({
+      object: "event",
+      id: "evt_123",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          object: "checkout.session",
+          id: "cs_123",
+          status: "complete",
+        },
+        previous_attributes: {
+          success_url: "https://shop.example.com/success?session_id={CHECKOUT_SESSION_ID}",
+          cancel_url: "https://shop.example.com/cancel?cart=abc123",
+          return_url: "https://shop.example.com/return?token=secret",
+        },
+      },
+    }) as Record<string, unknown>;
+
+    const data = result.data as Record<string, unknown>;
+    const prev = data.previous_attributes as Record<string, unknown>;
+    expect(prev.success_url).toBe("https://shop.example.com");
+    expect(prev.cancel_url).toBe("https://shop.example.com");
+    expect(prev.return_url).toBe("https://shop.example.com");
+  });
+});
+
+describe("business_profile URL sanitisation", () => {
+  it("reduces business_profile.url to origin", () => {
+    const result = sanitizeStripeResponse({
+      object: "account",
+      id: "acct_123",
+      business_profile: {
+        name: "Test Corp",
+        url: "https://testcorp.example.com/about?ref=stripe",
+      },
+    }) as Record<string, unknown>;
+
+    const bp = result.business_profile as Record<string, unknown>;
+    expect(bp.url).toBe("https://testcorp.example.com");
+  });
+});
+
+describe("error message token redaction", () => {
+  it("redacts secret keys from error messages", () => {
+    const result = formatStripeError({
+      type: "authentication_error",
+      message: "Invalid API Key provided: sk_test_abc123def456",
+      requestId: "req_999",
+    });
+    expect(result.message).not.toContain("sk_test_");
+    expect(result.message).toContain("[key redacted]");
+  });
+
+  it("redacts webhook signing secrets from error messages", () => {
+    const result = formatStripeError({
+      type: "invalid_request_error",
+      message: "Webhook secret whsec_abc123 is invalid",
+      requestId: "req_888",
+    });
+    expect(result.message).not.toContain("whsec_");
+    expect(result.message).toContain("[secret redacted]");
+  });
+
+  it("redacts client secrets from error messages", () => {
+    const result = formatStripeError({
+      type: "invalid_request_error",
+      message: "PaymentIntent pi_abc_secret_xyz123 not found",
+      requestId: "req_777",
+    });
+    expect(result.message).not.toContain("_secret_");
+    expect(result.message).toContain("[secret redacted]");
+  });
+});
+
 describe("formatStripeError", () => {
   it("formats raw Stripe-like errors safely", () => {
     expect(
