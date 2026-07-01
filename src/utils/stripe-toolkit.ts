@@ -836,7 +836,7 @@ function sanitiseErrorMessage(message: unknown): unknown {
     .replace(/https?:\/\/[^\s"']+/g, "[url redacted]")
     .replace(/\b(sk|pk|rk)_(test|live)_[A-Za-z0-9]+/g, "[key redacted]")
     .replace(/\bwhsec_[A-Za-z0-9]+/g, "[secret redacted]")
-    .replace(/\b(pi|seti|cs)_[A-Za-z0-9]*_secret_[A-Za-z0-9]+/g, "[secret redacted]");
+    .replace(/\b(pi|seti|cs)_[A-Za-z0-9_]*_secret_[A-Za-z0-9]+/g, "[secret redacted]");
 }
 
 function sanitiseWebhookUrl(value: unknown): unknown {

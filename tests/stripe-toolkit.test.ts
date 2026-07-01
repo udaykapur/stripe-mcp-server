@@ -373,6 +373,17 @@ describe("error message token redaction", () => {
     expect(result.message).not.toContain("_secret_");
     expect(result.message).toContain("[secret redacted]");
   });
+
+  it("redacts checkout session client secrets with multi-segment IDs", () => {
+    const result = formatStripeError({
+      type: "invalid_request_error",
+      message: "Session cs_test_abc_secret_xyz789 expired",
+      requestId: "req_666",
+    });
+    expect(result.message).not.toContain("cs_test_");
+    expect(result.message).not.toContain("_secret_");
+    expect(result.message).toContain("[secret redacted]");
+  });
 });
 
 describe("formatStripeError", () => {
